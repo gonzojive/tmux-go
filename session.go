@@ -1,6 +1,9 @@
 package tmux
 
-import "github.com/comogo/tmux-go/cmd"
+import (
+	"fmt"
+	"github.com/gonzojive/tmux-go/cmd"
+)
 
 type Session struct {
 	Name string
@@ -34,13 +37,57 @@ func (s Session) Exists() bool {
 	return false
 }
 
-func NewSession(name string) (*Session, error) {
-	err := cmd.NewSession(name)
+func (s *Session) SendKeys(windowName string, keys ...string) error {
+	return cmd.SendKeys(fmt.Sprintf("%s:%s.0", s.Name, windowName), keys...)
+}
+
+func (s *Session) EnsureWindowExists(name string) error {
+	exists, err := s.windowExists(name)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return nil
+	}
+	return cmd.NewWindow(s.Name, name)
+}
+
+func (s *Session) windowExists(name string) (bool, error) {
+	wins, err := cmd.ListWindows(s.Name)
+	if err != nil {
+		return false, err
+	}
+	for _, w := range wins {
+		if w.Name == name {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+type NewSessionOptions struct {
+	// WindowName is the name of the initial window
+	WindowName string
+}
+
+func (o *NewSessionOptions) args() []string {
+	if o == nil {
+		return nil
+	}
+	var args []string
+	if o.WindowName != "" {
+		args = append(args, "-n", o.WindowName)
+	}
+	return args
+}
+
+func NewSession(name string, opts *NewSessionOptions) (*Session, error) {
+	err := cmd.NewSession(name, opts.args()...)
 
 	return &Session{Name: name}, err
 }
 
-func Exists(name string) bool {
+func SessionExists(name string) bool {
 	for _, session := range ListSessions() {
 		if session.Name == name {
 			return true
@@ -50,13 +97,13 @@ func Exists(name string) bool {
 	return false
 }
 
-func ListSessions() []Session {
+func ListSessions() []*Session {
 	names := cmd.ListSessions()
 
-	sessions := make([]Session, len(names))
+	var sessions []*Session
 
 	for _, name := range names {
-		sessions = append(sessions, Session{Name: name})
+		sessions = append(sessions, &Session{Name: name})
 	}
 
 	return sessions

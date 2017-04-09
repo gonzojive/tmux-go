@@ -7,24 +7,24 @@ func kill(s *Session) {
 }
 
 func TestNewSession(t *testing.T) {
-	if Exists("foo") {
+	if SessionExists("foo") {
 		t.Fatal("Expected to not have a session(foo)")
 	}
 
-	session, err := NewSession("foo")
+	session, err := NewSession("foo", nil)
 	defer kill(session)
 
 	if err != nil {
 		t.Fatalf("Cannot create a session: %s", err)
 	}
 
-	if !Exists("foo") {
+	if !SessionExists("foo") {
 		t.Fatalf("Expected to have a session(%s)", session)
 	}
 }
 
 func TestListSessions(t *testing.T) {
-	session, _ := NewSession("foo")
+	session, _ := NewSession("foo", nil)
 	defer kill(session)
 
 	sessions := ListSessions()
@@ -46,24 +46,24 @@ func TestListSessions(t *testing.T) {
 	}
 }
 
-func TestExists(t *testing.T) {
-	if Exists("foo") {
+func TestSessionExists(t *testing.T) {
+	if SessionExists("foo") {
 		t.Fatal("Expect to not exists 'foo' session")
 	}
 
-	session, _ := NewSession("foo")
+	session, _ := NewSession("foo", nil)
 	defer kill(session)
 
-	if !Exists("foo") {
+	if !SessionExists("foo") {
 		t.Fatal("Expect to exists 'foo' session")
 	}
 }
 
 func TestSession(t *testing.T) {
-	session, _ := NewSession("foo")
+	session, _ := NewSession("foo", nil)
 	defer kill(session)
 
-	// Test session.Exists()
+	// Test session.SessionExists()
 	if !session.Exists() {
 		t.Fatal("Expect to exists 'foo' session")
 	}
@@ -71,11 +71,11 @@ func TestSession(t *testing.T) {
 	// Test session.Rename()
 	session.Rename("bar")
 
-	if Exists("foo") {
+	if SessionExists("foo") {
 		t.Fatal("Expect to not exists 'foo' session")
 	}
 
-	if !Exists("bar") {
+	if !SessionExists("bar") {
 		t.Fatal("Expect to exists 'bar' session")
 	}
 }
